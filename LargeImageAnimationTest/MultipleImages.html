@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Create Multiple Images</title>
+    <style>
+        img.pvTile
+        {
+            position:absolute;
+            top:1px;
+            left:1px;
+            opacity:1.0;
+            transition-property: opacity, top, left;
+            transition-duration: 1.0s;
+        }
+    </style>
+    <script>
+        function updateNumberImagesFromInput() {
+            var nImageInput = document.getElementById("nImages");
+            var nImg = nImageInput.value;
+            updateNumberOfImgages(nImg);
+        }
+
+        // Return all images for use.
+        function getAllImages()
+        {
+            var imageDiv = document.getElementById("imageBoard");
+            return imageDiv.getElementsByTagName("img");
+        }
+
+        // Load up n images, removing the old ones first
+        function updateNumberOfImgages(nimg) {
+            var oldImages = getAllImages()
+            for (var i = oldImages.length; i-- > 0;) {
+                oldImages[i].parentNode.removeChild(oldImages[i]);
+            }
+
+            var imageDiv = document.getElementById("imageBoard");
+            for (var i = 0; i < nimg; i++) {
+                var img = document.createElement("img");
+                img.src = "jojo.jpg";
+                img.width = "50";
+                img.className = "pvTile";
+                imageDiv.appendChild(img);
+            }
+
+            layoutVisibleImages();
+        }
+
+        // Do the layout positioning for visible images
+        function layoutVisibleImages()
+        {
+            var images = getAllImages();
+            var largestImageWidth = getLargest(images, function (i) { return i.width; });
+            var largestImageHeight = getLargest(images, function (i) { return i.height; });
+
+            if (largestImageHeight == 0 || largestImageWidth == 0)
+                return;
+
+            var offset = 120;
+
+            var nImages = 0
+            for (var i = 0; i < images.length; i++) {
+                if (images[i].style.opacity == "")
+                    nImages++;
+            }
+
+            var w = window.innerWidth;
+            var h = window.innerHeight - offset;
+
+            var imageRatio = largestImageWidth / largestImageHeight;
+            var targetImageWidth = Math.sqrt((w * h) / (nImages * imageRatio));
+            var targetImageHeight = targetImageWidth / imageRatio;
+
+
+            var iCol = 0;
+            var iRow = 0;
+            for (var i = 0; i < images.length; i++) {
+                if (images[i].style.opacity == "") {
+                    var x = Math.floor(iCol * targetImageWidth) + "px";
+                    var y = Math.floor(iRow * targetImageHeight + offset) + "px";
+
+                    images[i].style.left = x;
+                    images[i].style.top = y;
+                    images[i].width = targetImageWidth;
+
+                    iCol++;
+                    if ((iCol + 1) * targetImageWidth > w) {
+                        iRow++;
+                        iCol = 0;
+                    }
+                }
+            }
+        }
+
+        // Extract a number from a list of images, and return the largest.
+        function getLargest(images, selector)
+        {
+            var cache = 0;
+            var gotit = false;
+            for (var i = 0; i < images.length; i++) {
+                var val = selector(images[i]);
+                if (val > cache || !gotit) {
+                    gotit = true;
+                    cache = val;
+                }
+            }
+            return val;
+        }
+
+        // Make the images all disspear to some place else on the page
+        function flyAwayImages(fraction)
+        {
+            var images = getAllImages();
+            for (var i = 0; i < images.length; i++) {
+                var mr = Math.random();
+                if (mr > fraction) {
+                    images[i].style.opacity = 0.0;
+                    images[i].style.top = "0.0px";
+                    images[i].style.left = "0.0px";
+                } else {
+                    images[i].style.opacity = "";
+                }
+            }
+            layoutVisibleImages();
+        }
+
+        // When we get started
+        function onPageLoad()
+        {
+            document.getElementById("nImages").value = "100";
+            updateNumberOfImgages(100);
+        }
+    </script>
+</head>
+<body onload="onPageLoad()">
+    <div>
+        <p>Experiment: can jscript and a browser deal with animating the movement of a large number of images without making the CPU fall over?</p>
+        <p>This is pretty much my first jscript/html I've ever written. And it was written only to experiment on IE11.</p>
+        <p>
+            Number of images (click update after):
+            <input type="text" id="nImages" />
+            <input type="button" value="Update" onclick="updateNumberImagesFromInput()" />
+            <input type="button" value="Restore All" onclick="flyAwayImages(1.0)" />
+            <input type="button" value="50% Gone" onclick="flyAwayImages(0.5)" />
+        </p>
+        <p id="msg"></p>
+    </div>
+    <div id="imageBoard"></div>
+</body>
+</html>
